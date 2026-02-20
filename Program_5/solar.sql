@@ -124,6 +124,7 @@ SELECT u.Area, p.Capacity FROM Users u, Solar_Panel p, INSTALLED_BY i WHERE u.Bu
    QUERY 3
    Display the area where Monocrystalline panels are installed
    ============================================================ */
+
 SELECT DISTINCT u.Area, p.PV_Type FROM Users u, Solar_Panel p, INSTALLED_BY i WHERE u.Building_No = i.Building_No AND p.PV_Module = i.PV_Module  AND p.PV_Type = 'Monocrystalline';
 
 
@@ -134,7 +135,8 @@ SELECT DISTINCT u.Area, p.PV_Type FROM Users u, Solar_Panel p, INSTALLED_BY i WH
    for both types of PV modules
    (Example: Area = 'T Nagar')
    ============================================================ */
-SELECT u.Area, SUM(i.Installation_Charges) FROM Users u, Solar_Panel p, INSTALLED_BY i WHERE u.Building_No = i.Building_No AND p.PV_Module = i.PV_Module GROUP BY u.Area;
+
+SELECT u.Area, SUM(i.Installation_Charges) AS Total_Charges FROM Users u, INSTALLED_BY i WHERE u.Building_No = i.Building_No AND u.Area = 'T Nagar' GROUP BY u.Area;
 
 
 
@@ -143,6 +145,7 @@ SELECT u.Area, SUM(i.Installation_Charges) FROM Users u, Solar_Panel p, INSTALLE
    List the details of distributors and panel 
    that is the oldest installation
    ============================================================ */
+
 SELECT v.Name, v.Contact, v.Address, p.PV_Module, p.PV_Type, p.Price, p.Capacity, i.Installation_Date FROM Vendor v, INSTALLED_BY i, Solar_Panel p WHERE v.TIN = i.TIN AND p.PV_Module = i.PV_Module AND i.Installation_Date = (SELECT MIN(Installation_Date) FROM INSTALLED_BY);
 
 
@@ -152,5 +155,6 @@ SELECT v.Name, v.Contact, v.Address, p.PV_Module, p.PV_Type, p.Price, p.Capacity
    Find the average sales (installation charges) 
    of both types of panels in Commercial places only
    ============================================================ */
+   
 SELECT p.PV_Type, AVG(i.Installation_Charges) FROM Solar_Panel p, INSTALLED_BY i WHERE p.PV_Module = i.PV_Module AND i.Type = 'Commercial' GROUP BY p.PV_Type;
 

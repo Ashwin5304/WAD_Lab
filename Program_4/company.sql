@@ -144,7 +144,20 @@ INSERT INTO DEPT_LOCATIONS VALUES
    of employees working for Finance department.
    ============================================================ */
 
-SELECT e.Fname, e.Lname, d.Dname, e.Salary FROM employee e, department d WHERE e.Dno = d.Dnumber AND e.Salary > (SELECT AVG(e2.Salary) FROM employee e2, department d2 WHERE e2.Dno = d2.Dnumber AND d2.Dname = 'Finance');
+SELECT 
+    e.Fname AS "First Name", 
+    e.Lname AS "Second Name", 
+    d.Dname AS Dept_Name, 
+    e.Salary AS salary 
+FROM employee e, department d 
+WHERE e.Dno = d.Dnumber 
+  AND e.Salary > (
+      SELECT AVG(e2.Salary) 
+      FROM employee e2, department d2 
+      WHERE e2.Dno = d2.Dnumber AND d2.Dname = 'Finance'
+  );
+
+
 
 /* ============================================================
    QUERY 2
@@ -152,7 +165,23 @@ SELECT e.Fname, e.Lname, d.Dname, e.Salary FROM employee e, department d WHERE e
    currently working on more than two projects 
    controlled by R&D department.
    ============================================================ */
-SELECT e.Fname, e.Lname, d.Dname, counts.cnt AS "No of Projects"FROM employee e, department d,(SELECT w.Essn, COUNT(w.Essn) AS cnt FROM works_on w, project p, department d2 WHERE w.Pno = p.Pnumber AND p.Dnum = d2.Dnumber AND d2.Dname = 'R&D' GROUP BY w.Essn) AS counts WHERE e.Dno = d.Dnumber AND e.Ssn = counts.Essn AND counts.cnt > 2;
+
+SELECT 
+    e.Fname AS "First Name", 
+    e.Lname AS "Second Name", 
+    d.Dname AS Dept_Name, 
+    counts.cnt AS "Number of Projects"
+FROM employee e, department d,
+     (SELECT w.Essn, COUNT(w.Pno) AS cnt 
+      FROM works_on w, project p, department d2 
+      WHERE w.Pno = p.Pnumber 
+        AND p.Dnum = d2.Dnumber 
+        AND d2.Dname = 'R&D' 
+      GROUP BY w.Essn) AS counts 
+WHERE e.Dno = d.Dnumber 
+  AND e.Ssn = counts.Essn 
+  AND counts.cnt > 2;
+
 
 /* ============================================================
    QUERY 3
@@ -160,8 +189,14 @@ SELECT e.Fname, e.Lname, d.Dname, counts.cnt AS "No of Projects"FROM employee e,
    all the departments.
    ============================================================ */
 
-SELECT p.Pnumber, p.Pname, d.Dname FROM project p, department d WHERE p.Dnum = d.Dnumber AND (p.End_date IS NULL OR p.End_date >= CURRENT_DATE);
-
+SELECT 
+    p.Pnumber AS Project_id, 
+    p.Pname AS Project_title, 
+    d.Dname AS Dept_Name, 
+    p.End_date AS "Date of completion"
+FROM project p, department d 
+WHERE p.Dnum = d.Dnumber 
+  AND (p.End_date IS NULL OR p.End_date >= CURRENT_DATE);
 
 
 /* ============================================================
@@ -170,7 +205,21 @@ SELECT p.Pnumber, p.Pname, d.Dname FROM project p, department d WHERE p.Dnum = d
    more than 3 employees who have completed at least one project.
    ============================================================ */
 
-SELECT e.Ssn, e.Fname, e.Lname FROM employee e, (SELECT Super_ssn, COUNT(e2.Ssn) AS cnt FROM employee e2, project p, works_on w WHERE e2.Ssn = w.Essn AND p.Pnumber = w.Pno AND Super_ssn IS NOT NULL GROUP BY Super_ssn) AS counts WHERE counts.Super_ssn = e.Ssn AND counts.cnt > 3;
+SELECT 
+    e.Ssn AS Supervisor_id, 
+    e.Fname AS supervisor_name 
+FROM employee e, 
+     (SELECT e2.Super_ssn, COUNT(DISTINCT e2.Ssn) AS cnt 
+      FROM employee e2, project p, works_on w 
+      WHERE e2.Ssn = w.Essn 
+        AND p.Pnumber = w.Pno 
+        AND p.End_date < CURRENT_DATE  -- Verifies project is completed
+        AND e2.Super_ssn IS NOT NULL 
+      GROUP BY e2.Super_ssn) AS counts 
+WHERE counts.Super_ssn = e.Ssn 
+  AND counts.cnt > 3;
+
+
 
 /* ============================================================
    QUERY 5
@@ -178,7 +227,18 @@ SELECT e.Ssn, e.Fname, e.Lname FROM employee e, (SELECT Super_ssn, COUNT(e2.Ssn)
    completed total projects worth 10 Lakhs (10,00,000) or more.
    ============================================================ */
 
-SELECT DISTINCT e.Ssn, e.Fname, p.Worth, d.Dependent_name FROM works_on w, project p, dependent d, employee e WHERE d.Essn = e.Ssn AND e.Ssn = w.Essn AND w.Pno = p.Pnumber AND p.Worth > 1000000;
+SELECT e.Ssn, e.Fname, d.Dependent_name
+FROM employee e, dependent d
+WHERE e.Ssn = d.Essn
+  AND e.Ssn IN (
+      SELECT w.Essn
+      FROM works_on w, project p
+      WHERE w.Pno = p.Pnumber
+        AND p.End_date < CURRENT_DATE
+      GROUP BY w.Essn
+      HAVING SUM(p.Worth) >= 1000000
+  );
+
 
 /* ============================================================
    QUERY 6
@@ -186,4 +246,18 @@ SELECT DISTINCT e.Ssn, e.Fname, p.Worth, d.Dependent_name FROM works_on w, proje
    is in more than one city.
    ============================================================ */
 
-SELECT e.Ssn, d.Dnumber, p.Pnumber, p.Plocation FROM employee e, project p, department d WHERE e.Dno = d.Dnumber AND p.Dnum = d.Dnumber;
+SELECT 
+    e.Ssn AS Employee_id, 
+    d.Dnumber AS Department_id, 
+    p.Pnumber AS Project_id, 
+    p.Plocation AS City
+FROM employee e, project p, department d, works_on w,
+     (SELECT Dnum 
+      FROM project 
+      GROUP BY Dnum 
+      HAVING COUNT(DISTINCT Plocation) > 1) AS multi_city_dept
+WHERE e.Dno = d.Dnumber 
+  AND p.Dnum = d.Dnumber
+  AND d.Dnumber = multi_city_dept.Dnum
+  AND w.Essn = e.Ssn
+  AND w.Pno = p.Pnumber;

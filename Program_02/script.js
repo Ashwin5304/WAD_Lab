@@ -2,7 +2,6 @@ function addItem() {
     let name = document.getElementById('name').value;
     let qty = document.getElementById('qty').value;
     let price = document.getElementById('price').value;
-    let table = document.getElementById('table');
 
     if (!name || !qty || !price) {
         alert('Fill all fields');
@@ -14,7 +13,7 @@ function addItem() {
     row.innerHTML = `
         <td>${name}</td>
         <td>${qty}</td>
-        <td>${price}</td>
+        <td>${price}</td>zz
         <td>
             <button class="btn btn-warning me-1" onclick="editItem(this)">Edit</button>
             <button class="btn btn-danger" onclick="this.closest('tr').remove()">Remove</button>
@@ -37,5 +36,5 @@ function editItem(button) {
     document.getElementById('qty').value = qty;
     document.getElementById('price').value = price;
 
-    row.remove()
+    row.remove();
 }
